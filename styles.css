@@ -431,20 +431,6 @@ textarea {
   background: #fff;
 }
 
-.capture-export .page {
-  width: auto;
-  max-width: none;
-  padding: 0;
-}
-
-.capture-export .invoice-form {
-  padding: 0;
-  border: 0;
-  box-shadow: none;
-  background: #fff;
-  color: #2c2a29;
-}
-
 .capture-export .invoice-actions,
 .capture-export .invoice-line-tools,
 .capture-export .invoice-line-actions,
@@ -452,9 +438,55 @@ textarea {
   display: none !important;
 }
 
-.capture-export .invoice-line-head,
-.capture-export .invoice-line-row {
-  grid-template-columns: minmax(0, 2.4fr) minmax(96px, 0.7fr) minmax(120px, 0.85fr) minmax(140px, 0.95fr);
+.capture-export-root {
+  width: 794px;
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+}
+
+.export-page {
+  width: 794px;
+  height: 1123px;
+  padding: 38px;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #2c2a29;
+  overflow: hidden;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+
+.export-page-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #d8edf7;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5c524d;
+}
+
+.export-items-section {
+  display: grid;
+  gap: 10px;
+}
+
+.export-page-line-list {
+  display: grid;
+  gap: 10px;
+}
+
+.capture-export .invoice-masthead,
+.capture-export .invoice-parties,
+.capture-export .invoice-bottom {
+  gap: 18px;
 }
 
 .capture-export .invoice-sheet,
@@ -479,8 +511,40 @@ textarea {
   background: #ffffff;
 }
 
+.capture-export .invoice-line-head,
 .capture-export .invoice-line-row {
+  grid-template-columns: minmax(0, 2.6fr) minmax(84px, 0.65fr) minmax(120px, 0.85fr) minmax(120px, 0.85fr);
+}
+
+.capture-export .invoice-line-head > :last-child,
+.capture-export .invoice-line-row > :last-child {
+  display: none !important;
+}
+
+.capture-export .invoice-line-row {
+  padding: 14px;
   background: #9dd8f0;
+}
+
+.capture-export .invoice-line-row .invoice-line-total {
+  min-width: 0;
+}
+
+.capture-export .invoice-line-row .invoice-line-total output {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.capture-export .invoice-bottom {
+  align-items: start;
+}
+
+.capture-export .invoice-summary {
+  width: 100%;
+}
+
+.capture-export .invoice-summary-row {
+  border-bottom-color: #d8edf7;
 }
 
 @media (max-width: 860px) {
