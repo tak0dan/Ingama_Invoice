@@ -427,6 +427,62 @@ textarea {
   color: var(--danger);
 }
 
+.capture-export {
+  background: #fff;
+}
+
+.capture-export .page {
+  width: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.capture-export .invoice-form {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: #fff;
+  color: #2c2a29;
+}
+
+.capture-export .invoice-actions,
+.capture-export .invoice-line-tools,
+.capture-export .invoice-line-actions,
+.capture-export .invoice-status {
+  display: none !important;
+}
+
+.capture-export .invoice-line-head,
+.capture-export .invoice-line-row {
+  grid-template-columns: minmax(0, 2.4fr) minmax(96px, 0.7fr) minmax(120px, 0.85fr) minmax(140px, 0.95fr);
+}
+
+.capture-export .invoice-sheet,
+.capture-export .invoice-party-card {
+  border-color: #d8edf7;
+  background: #fffdfa;
+}
+
+.capture-export .invoice-line-head,
+.capture-export .invoice-form label span,
+.capture-export .invoice-brand-copy,
+.capture-export .invoice-summary-label {
+  color: #5c524d;
+}
+
+.capture-export .invoice-form input,
+.capture-export .invoice-form textarea,
+.capture-export .invoice-summary-row,
+.capture-export .invoice-line-row .invoice-line-total output {
+  color: #2c2a29;
+  border-color: #d8edf7;
+  background: #ffffff;
+}
+
+.capture-export .invoice-line-row {
+  background: #9dd8f0;
+}
+
 @media (max-width: 860px) {
   .page-head,
   .invoice-masthead,
@@ -501,6 +557,11 @@ textarea {
   .invoice-line-actions,
   .invoice-status {
     display: none !important;
+  }
+
+  .invoice-line-head,
+  .invoice-line-row {
+    grid-template-columns: minmax(0, 2.4fr) minmax(96px, 0.7fr) minmax(120px, 0.85fr) minmax(140px, 0.95fr);
   }
 
   .invoice-form {
