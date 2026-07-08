@@ -332,6 +332,10 @@
         URL.revokeObjectURL(url);
       }
 
+      function slugifyFileSegment(value) {
+        return String(value || 'factura').trim().replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'factura';
+      }
+
       function buildCaptureClone() {
         var wrapper = document.createElement('div');
         wrapper.className = 'capture-export';
@@ -402,14 +406,173 @@
         });
       }
 
+      function createExportPage(documentRef, metaText) {
+        var page = documentRef.createElement('section');
+        page.className = 'export-page';
+
+        if (metaText) {
+          var meta = documentRef.createElement('div');
+          meta.className = 'export-page-meta';
+          meta.innerHTML = '<span>' + escapeHtml(metaText.invoice) + '</span><span>' + escapeHtml(metaText.date) + '</span><span>' + escapeHtml(metaText.page) + '</span>';
+          page.appendChild(meta);
+        }
+
+        return page;
+      }
+
+      function createItemsSection(documentRef, headTemplate) {
+        var section = documentRef.createElement('section');
+        section.className = 'export-items-section';
+
+        var head = headTemplate.cloneNode(true);
+        var list = documentRef.createElement('div');
+        list.className = 'export-page-line-list';
+
+        section.appendChild(head);
+        section.appendChild(list);
+
+        return {
+          section: section,
+          list: list
+        };
+      }
+
+      function pageHasOverflow(page) {
+        return page.scrollHeight > page.clientHeight;
+      }
+
+      function buildPaginatedExport() {
+        var exportNodes = buildCaptureClone();
+        var wrapper = exportNodes.wrapper;
+        var clone = exportNodes.clone;
+        var documentRef = clone.ownerDocument;
+        var exportRoot = documentRef.createElement('div');
+        exportRoot.className = 'capture-export-root';
+        wrapper.innerHTML = '';
+        wrapper.appendChild(exportRoot);
+
+        var invoiceNumber = clone.querySelector('#invoice-number') ? clone.querySelector('#invoice-number').value : '';
+        var dateValue = clone.querySelector('#invoice-date') ? clone.querySelector('#invoice-date').value : '';
+        var metaBase = {
+          invoice: 'Factura ' + (invoiceNumber || ''),
+          date: formatDisplayDate(dateValue || '')
+        };
+
+        var masthead = clone.querySelector('.invoice-masthead');
+        var parties = clone.querySelector('.invoice-parties');
+        var headTemplate = clone.querySelector('.invoice-line-head');
+        var bottom = clone.querySelector('.invoice-bottom');
+        var rows = Array.from(clone.querySelectorAll('.invoice-line-row'));
+
+        if (bottom) {
+          var actions = bottom.querySelector('.invoice-actions');
+          var status = bottom.querySelector('.invoice-status');
+          if (actions) actions.remove();
+          if (status) status.remove();
+        }
+
+        var pageNumber = 1;
+        var currentPage = createExportPage(documentRef, null);
+        exportRoot.appendChild(currentPage);
+
+        if (masthead) currentPage.appendChild(masthead);
+        if (parties) currentPage.appendChild(parties);
+
+        var currentItems = createItemsSection(documentRef, headTemplate);
+        currentPage.appendChild(currentItems.section);
+
+        rows.forEach(function (row) {
+          currentItems.list.appendChild(row);
+
+          if (pageHasOverflow(currentPage)) {
+            row.remove();
+            pageNumber += 1;
+            currentPage = createExportPage(documentRef, {
+              invoice: metaBase.invoice,
+              date: metaBase.date,
+              page: 'Pagina ' + pageNumber
+            });
+            exportRoot.appendChild(currentPage);
+            currentItems = createItemsSection(documentRef, headTemplate);
+            currentPage.appendChild(currentItems.section);
+            currentItems.list.appendChild(row);
+          }
+        });
+
+        if (bottom) {
+          currentPage.appendChild(bottom);
+
+          if (pageHasOverflow(currentPage)) {
+            bottom.remove();
+            pageNumber += 1;
+            currentPage = createExportPage(documentRef, {
+              invoice: metaBase.invoice,
+              date: metaBase.date,
+              page: 'Pagina ' + pageNumber
+            });
+            exportRoot.appendChild(currentPage);
+            currentPage.appendChild(bottom);
+          }
+        }
+
+        return {
+          wrapper: wrapper,
+          pages: Array.from(exportRoot.querySelectorAll('.export-page'))
+        };
+      }
+
+      function downloadBlobSequence(blobs, baseName) {
+        blobs.forEach(function (blob, index) {
+          var suffix = blobs.length > 1 ? '-p' + String(index + 1).padStart(2, '0') : '';
+          triggerBlobDownload(blob, baseName + suffix + '.png');
+        });
+      }
+
+      function captureInvoiceAsA4Pngs(invoiceNumber) {
+        if (!window.htmlToImage || !window.htmlToImage.toBlob) {
+          return Promise.reject(new Error('La libreria de captura todavia no esta lista.'));
+        }
+
+        var exportBundle = buildPaginatedExport();
+        var wrapper = exportBundle.wrapper;
+        var pages = exportBundle.pages;
+        var baseName = 'factura-' + slugifyFileSegment(invoiceNumber);
+
+        return pages.reduce(function (chain, page) {
+          return chain.then(function (blobs) {
+            return window.htmlToImage.toBlob(page, {
+              cacheBust: true,
+              pixelRatio: 2,
+              backgroundColor: '#ffffff',
+              width: 794,
+              height: 1123
+            }).then(function (blob) {
+              if (!blob) {
+                throw new Error('No se pudo convertir una de las paginas a PNG.');
+              }
+
+              blobs.push(blob);
+              return blobs;
+            });
+          });
+        }, Promise.resolve([])).then(function (blobs) {
+          wrapper.remove();
+          downloadBlobSequence(blobs, baseName);
+          return blobs.length;
+        }).catch(function (error) {
+          wrapper.remove();
+          throw error;
+        });
+      }
+
       if (downloadButton) {
         downloadButton.addEventListener('click', function () {
           var invoiceNumber = (form.querySelector('#invoice-number').value || 'factura').trim() || 'factura';
           setStatus('Preparando descarga...', false);
 
-          captureInvoiceAsPng(invoiceNumber)
-            .then(function () {
-              setStatus('PNG descargado correctamente.', false);
+          captureInvoiceAsA4Pngs(invoiceNumber)
+            .then(function (pageCount) {
+              setStatus(pageCount > 1 ? ('Se descargaron ' + pageCount + ' paginas PNG A4.') : 'PNG A4 descargado correctamente.', false);
             })
             .catch(function (error) {
               setStatus(error && error.message ? error.message : 'No se pudo descargar la imagen.', true);
